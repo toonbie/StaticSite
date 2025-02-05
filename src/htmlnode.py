@@ -16,7 +16,7 @@ class HTMLNode():
         if self.props == "" or self.props == None:
             return prop_print
         for x,y in self.props.items():
-            prop_print += f"{x}=\"{y}\" "
+            prop_print += f" {x}=\"{y}\""
         return prop_print
     
     def __repr__(self):
