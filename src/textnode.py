@@ -37,3 +37,25 @@ def text_node_to_html_node(text_node):
 			return LeafNode("code","",{"src" : text_node.url , "alt" : text_node.text})
 		case _:
 			raise Exception("Incorrect TextType")
+		
+def split_nodes_delimiter(old_nodes,delimiter,text_type):
+	node_storage = []
+	for node in old_nodes:
+		if node.text_type != TextType.TEXT:
+			node_storage.append(node)
+			continue
+		first = node.text.find(delimiter)
+		second = node.text.find(delimiter,first+1)
+		if first == -1 or second == -1:
+			raise Exception("Can't find delimiter pair") 
+		before = node.text[:first]
+		middle = node.text[first + len(delimiter):second]
+		after= node.text[second + len(delimiter):]
+		if before:
+			node_storage.append(TextNode(before,TextType.TEXT))
+			
+		node_storage.append(TextNode(middle,text_type))
+		if after:
+			node_storage.append(TextNode(after, TextType.TEXT))
+
+	return node_storage
