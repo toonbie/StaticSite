@@ -1,5 +1,6 @@
 from enum import Enum
 from leafnode import LeafNode
+import re
 class TextType(Enum):
 	TEXT = "text"
 	BOLD = "bold"
@@ -59,3 +60,15 @@ def split_nodes_delimiter(old_nodes,delimiter,text_type):
 			node_storage.append(TextNode(after, TextType.TEXT))
 
 	return node_storage
+
+def extract_markdown_images(text):
+	result = []
+	matches = re.findall(r"!\[(.*?)\]\((.*?)\)", text)
+	result.extend(matches)
+	return result
+
+def extract_markdown_links(text):
+	result = []
+	matches = re.findall(r"\[(.*?)\]\((.*?)\)", text)
+	result.extend(matches)
+	return result
