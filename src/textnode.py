@@ -9,6 +9,15 @@ class TextType(Enum):
 	LINK = "link"
 	IMAGE = "image"
 
+class BlockType(Enum):
+	PARAGRAPH = "paragraph"
+	HEADING = "heading"
+	CODE = "code"
+	QUOTE = "quote"
+	UNORDERED = "unordered_list"
+	ORDERED = "ordered_list"
+
+
 class TextNode():
 	def __init__(self,text,text_type,url=None):
 		self.text = text
@@ -138,5 +147,31 @@ def markdown_to_blocks(markdown):
 				continue
 			if lines[i+1] != "":
 				output += "\n" 
-			
 	return blocks
+
+def block_to_block_type(block):
+	lines = block.split("\n")
+	if re.match(r"#{1,6} \w+",lines[0]):
+			return BlockType.HEADING
+	if re.match(r"^```",lines[0]) and re.match(r"^```$",lines[-1]) or re.match(r"^```.*?```$",lines[0]):
+			return BlockType.CODE
+	is_quote = True
+	is_unordered = True
+	is_ordered = True
+	for i in range(0,len(lines)):
+		if not any([is_quote,is_unordered,is_ordered]):
+			break
+		if not re.match(r"^>",lines[i]):
+			is_quote = False
+		if not re.match(r"^(\*|-) ",lines[i]):
+			is_unordered = False
+		if not re.match(rf"^{i+1}. ",lines[i]):
+			is_ordered = False
+	if is_quote:
+		return BlockType.QUOTE
+	elif is_unordered:
+		return BlockType.UNORDERED
+	elif is_ordered:
+		return BlockType.ORDERED
+	else:
+		return BlockType.PARAGRAPH
