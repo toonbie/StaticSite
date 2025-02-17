@@ -1,5 +1,7 @@
 from enum import Enum
 from leafnode import LeafNode
+from parentnode import ParentNode
+from leafnode import LeafNode
 import re
 class TextType(Enum):
 	TEXT = "text"
@@ -175,3 +177,71 @@ def block_to_block_type(block):
 		return BlockType.ORDERED
 	else:
 		return BlockType.PARAGRAPH
+	
+def markdown_to_html_node(markdown):
+	htmlnodes = []
+	blocks = markdown_to_blocks(markdown)
+	for block in blocks:
+		block_type = block_to_block_type(block)
+		match(block_type):
+			case BlockType.PARAGRAPH:
+				children = text_to_children(block)
+				paragraph = ParentNode("p",children)
+				htmlnodes.append(paragraph)
+			case BlockType.HEADING:
+				hashtagSeperated = re.match(r"^(#+) ",block).group()
+				headingSize = hashtagSeperated.count("#")
+				if headingSize > 6:
+					headingSize = 6
+				text = re.sub(r"^(#+) ", "", block)
+				children = text_to_children(text)
+				tag = f"h{headingSize}"
+				heading = ParentNode(tag,children)
+				htmlnodes.append(heading)
+			case BlockType.QUOTE:
+				text = re.sub(r"^> ","",block, flags=re.M)
+				children = text_to_children(text)
+				quote = ParentNode("blockquote", children)
+				htmlnodes.append(quote)
+			case BlockType.CODE:
+				text = re.sub(r"^```|```$","",block, flags=re.M)
+				children = ParentNode("code",[LeafNode(None,text)])
+				code = ParentNode("pre", children)
+				htmlnodes.append(code)
+			case BlockType.UNORDERED:
+				text = re.sub(r"^(\*|-) ","",block, flags=re.M)
+				lines = text.split("\n")
+				li_nodes = []
+				for line in lines:
+					children = text_to_children(line)
+					li_nodes.append(ParentNode("li",children))
+				ul_node = ParentNode("ul", li_nodes)
+				htmlnodes.append(ul_node)
+			case BlockType.ORDERED:
+				text = re.sub(r"^\d. ","",block, flags=re.M)
+				lines = text.split("\n")
+				li_nodes = []
+				for line in lines:
+					children = text_to_children(line)
+					li_nodes.append(ParentNode("li",children))
+				ol_node = ParentNode("ol", li_nodes)
+				htmlnodes.append(ol_node)
+	return ParentNode("div",htmlnodes)
+
+def text_to_children(text):
+	text_nodes = text_to_textnodes(text)
+	children = []
+	for text_node in text_nodes:
+		match text_node.text_type:
+			case TextType.TEXT:
+				children.append(LeafNode(None,text_node.text))
+			case TextType.BOLD:
+				text_child = LeafNode(None,text_node.text)
+				children.append(ParentNode("strong",[text_child]))
+			case TextType.ITALIC:
+				text_child = LeafNode(None,text_node.text)
+				children.append(ParentNode("em",[text_child]))
+			case TextType.CODE:
+				text_child = LeafNode(None,text_node.text)
+				children.append(ParentNode("code",[text_child]))	
+	return children
